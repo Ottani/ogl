@@ -1,4 +1,7 @@
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -41,6 +44,11 @@ int main(void)
 		cerr << "Error: " << glewGetErrorString(err) << '\n';
 		return -2;
 	}
+
+	int nrAttributes;
+	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
+	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
+	
 
 	unsigned int shader = createShader();
 
@@ -119,23 +127,23 @@ void processInput(GLFWwindow *window)
 
 unsigned int createVertexShader()
 {
-	const char *vertexShaderSource = "#version 330 core\n"
-		"layout (location = 0) in vec3 aPos;\n"
-		"void main()\n"
-		"{\n"
-		"   gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);\n"
-		"}\0";
+	std::ifstream f("vertex.glsl");
+	std::stringstream strStream;
+	strStream << f.rdbuf();
+	std::string str = strStream.str();
+	const char *cStr = str.c_str();
+	
 	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-        glShaderSource(vertexShader, 1, &vertexShaderSource, NULL);
-        glCompileShader(vertexShader);
+	glShaderSource(vertexShader, 1, &cStr, NULL);
+	glCompileShader(vertexShader);
 
-        int success;
-        char infoLog[512];
-        glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-                glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-                cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
+	int success;
+	char infoLog[512];
+	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 		return 0;
 	}
 	return vertexShader;
@@ -143,15 +151,14 @@ unsigned int createVertexShader()
 
 unsigned int createFragmentShader()
 {
-	const char *fragmentShaderSource = "#version 330 core\n"
-		"out vec4 FragColor;\n"
-		"void main()\n"
-		"{\n"
-		"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
-		"}\n\0";
+	std::ifstream f("fragment.glsl");
+	std::stringstream strStream;
+	strStream << f.rdbuf();
+	std::string str = strStream.str();
+	const char *cStr = str.c_str();
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glShaderSource(fragmentShader, 1, &cStr, NULL);
 	glCompileShader(fragmentShader);
 
 	int success;
