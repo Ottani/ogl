@@ -1,0 +1,3 @@
+PATH=C:\cygwin64\usr\x86_64-w64-mingw32\sys-root\mingw\bin;C:\WINDOWS\system32;C:\WINDOWS
+
+export PATH=/usr/x86_64-w64-mingw32/sys-root/mingw/bin/:/usr/local/bin:/usr/bin:/cygdrive/c/WINDOWS/system32:/cygdrive/c/WINDOWS:

@@ -16,6 +16,7 @@ unsigned int createShader();
 
 int main(void)
 {
+	cout << "starting..." << std::endl;
 	GLFWwindow* window;
 
 	if (!glfwInit())
@@ -24,8 +25,8 @@ int main(void)
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-  
-	window = glfwCreateWindow(g_width, g_height, "Hello World", NULL, NULL);
+
+  	window = glfwCreateWindow(g_width, g_height, "Hello World", NULL, NULL);
 	if (!window)
 	{
 		glfwTerminate();
@@ -33,7 +34,7 @@ int main(void)
 	}
 
 	glfwMakeContextCurrent(window);
-	
+
 	GLenum err = glewInit();
 	if (err = GLEW_OK)
 	{
@@ -134,8 +135,7 @@ unsigned int createVertexShader()
         if (!success)
         {
                 glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
-                cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog
- << std::endl;
+                cout << "ERROR::SHADER::VERTEX::COMPILATION_FAILED\n" << infoLog << std::endl;
 		return 0;
 	}
 	return vertexShader;
@@ -150,19 +150,19 @@ unsigned int createFragmentShader()
 		"   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n"
 		"}\n\0";
 
-        unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-        glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
-        glCompileShader(fragmentShader);
+	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	glShaderSource(fragmentShader, 1, &fragmentShaderSource, NULL);
+	glCompileShader(fragmentShader);
 
 	int success;
-        char infoLog[512];
-        glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-                glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-                cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
+	char infoLog[512];
+	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
+	if (!success)
+	{
+		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
+		cout << "ERROR::SHADER::FRAGMENT::COMPILATION_FAILED\n" << infoLog << std::endl;
 		return 0;
-        }
+	}
 	return fragmentShader;
 }
 
@@ -188,4 +188,3 @@ unsigned int createShader()
 	glDeleteShader(fragmentShader);
 	return shaderProgram;
 }
-
