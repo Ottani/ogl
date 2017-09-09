@@ -16,7 +16,7 @@ int g_height = 480;
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
-void runLoop(GLFWwindow* window, unsigned int shader1, unsigned int shader2);
+void runLoop(GLFWwindow* window, const Shader& shader1, const Shader& shader2);
 
 int main(void)
 {
@@ -49,10 +49,15 @@ int main(void)
 	int nrAttributes;
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
-	
 
-	unsigned int shader1 = createShader("vertex.glsl", "fragment.glsl");
-	unsigned int shader2 = createShader("vertex1.glsl", "fragment.glsl");
+	Shader shader1, shader2;
+	shader1.compile("vertex.glsl", VERTEX);
+	shader1.compile("fragment.glsl", FRAGMENT);
+	shader1.link();
+
+	shader2.compile("vertex1.glsl", VERTEX);
+	shader2.compile("fragment.glsl", FRAGMENT);
+	shader2.link();
 
 	glViewport(0, 0, g_width, g_height);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);  
@@ -65,7 +70,7 @@ int main(void)
 	return 0;
 }
 
-void runLoop(GLFWwindow* window, unsigned int shader1, unsigned int shader2)
+void runLoop(GLFWwindow* window, const Shader& shader1, const Shader& shader2)
 {
 	Geometry g1, g2;
 	g1.load("vertices01.txt", "indices01.txt");
@@ -78,11 +83,11 @@ void runLoop(GLFWwindow* window, unsigned int shader1, unsigned int shader2)
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
         
-		glUseProgram(shader1);
+		glUseProgram(shader1.getShader());
 		glBindVertexArray(g1.getVAO());
 		glDrawElements(GL_TRIANGLES, g1.getQty(), GL_UNSIGNED_INT, 0);
 
-		glUseProgram(shader2);
+		glUseProgram(shader2.getShader());
 		glBindVertexArray(g2.getVAO());
 		glDrawElements(GL_TRIANGLES, g2.getQty(), GL_UNSIGNED_INT, 0);
 

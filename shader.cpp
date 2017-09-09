@@ -10,73 +10,72 @@
 using std::cout;
 using std::cerr;
 
-unsigned int createVertexShader(const std::string &filename);
-unsigned int createFragmentShader(const std::string &filename);
 const std::string readFile(const std::string &filename);
 
-unsigned int createShader(const std::string& vertexFilename, const std::string& fragmentFilename)
+Shader::Shader() : shader(0), tmpShaders{0, 0}
 {
-	unsigned int vertexShader = createVertexShader(vertexFilename);
-	unsigned int fragmentShader = createFragmentShader(fragmentFilename);
 
-	unsigned int shaderProgram = glCreateProgram();
-	glAttachShader(shaderProgram, vertexShader);
-	glAttachShader(shaderProgram, fragmentShader);
-	glLinkProgram(shaderProgram);
-
-	int success;
-    char infoLog[512];
-	glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-	if (!success) {
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		cerr << "Error: link failed: " << infoLog << std::endl;
-		return 0;
-	}
-	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
-	return shaderProgram;
 }
 
-unsigned int createVertexShader(const std::string &filename)
+Shader::~Shader()
 {
+	if (shader != 0 ) {
+		glDeleteShader(shader);
+	}
+}
+
+bool Shader::compile(const std::string& filename, ShaderType shaderType)
+{
+	cout << "loading shader " << filename << ", type: " << shaderType << '\n';
+	if (tmpShaders[shaderType] != 0 || shader != 0) {
+		cerr << "Error: Shader slot already used or already linked: " << shaderType << std::endl;
+		return false;
+	}
+
 	const std::string contents = readFile(filename);
 	const char * cStr = contents.c_str();
 	
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
-	glShaderSource(vertexShader, 1, &cStr, NULL);
-	glCompileShader(vertexShader);
+	tmpShaders[shaderType] = glCreateShader(shaderType==VERTEX?GL_VERTEX_SHADER:GL_FRAGMENT_SHADER);
+	glShaderSource(tmpShaders[shaderType], 1, &cStr, NULL);
+	glCompileShader(tmpShaders[shaderType]);
 
 	int success;
 	char infoLog[512];
-	glGetShaderiv(vertexShader, GL_COMPILE_STATUS, &success);
+	glGetShaderiv(tmpShaders[shaderType], GL_COMPILE_STATUS, &success);
 	if (!success)
 	{
-		glGetShaderInfoLog(vertexShader, 512, NULL, infoLog);
+		glGetShaderInfoLog(tmpShaders[shaderType], 512, NULL, infoLog);
 		cerr << "Error: shader compilation failed: " << infoLog << std::endl;
-		return 0;
+		glDeleteShader(tmpShaders[shaderType]);
+		tmpShaders[shaderType] = 0;
+		return false;
 	}
-	return vertexShader;
+	return true;
 }
 
-unsigned int createFragmentShader(const std::string &filename)
+bool Shader::link()
 {
-	const std::string contents = readFile(filename);
-	const char * cStr = contents.c_str();
-
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	glShaderSource(fragmentShader, 1, &cStr, NULL);
-	glCompileShader(fragmentShader);
+	cout << "linking shader...\n";
+	if (tmpShaders[VERTEX] == 0 || tmpShaders[FRAGMENT] == 0 || shader != 0 ) {
+		cerr << "Error: Shaders not ready or already linked!" << std::endl;
+		return false;
+	}
+	shader = glCreateProgram();
+	glAttachShader(shader, tmpShaders[VERTEX]);
+	glAttachShader(shader, tmpShaders[FRAGMENT]);
+	glLinkProgram(shader);
 
 	int success;
-	char infoLog[512];
-	glGetShaderiv(fragmentShader, GL_COMPILE_STATUS, &success);
-	if (!success)
-	{
-		glGetShaderInfoLog(fragmentShader, 512, NULL, infoLog);
-		cerr << "Error fragment compilation failed: " << infoLog << std::endl;
-		return 0;
+    char infoLog[512];
+	glGetProgramiv(shader, GL_LINK_STATUS, &success);
+	if (!success) {
+		glGetProgramInfoLog(shader, 512, NULL, infoLog);
+		cerr << "Error: link failed: " << infoLog << std::endl;
+		return false;
 	}
-	return fragmentShader;
+	glDeleteShader(tmpShaders[VERTEX]);
+	glDeleteShader(tmpShaders[FRAGMENT]);
+	return true;
 }
 
 const std::string readFile(const std::string &filename)
