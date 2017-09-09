@@ -34,7 +34,8 @@ int main(void)
 
 	glfwMakeContextCurrent(window);
 	
-	if (GLenum err = glewInit(); err = GLEW_OK)
+	GLenum err = glewInit();
+	if (err = GLEW_OK)
 	{
 		cerr << "Error: " << glewGetErrorString(err) << '\n';
 		return -2;
