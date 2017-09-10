@@ -12,7 +12,6 @@
 using std::cout;
 using std::cerr;
 
-// TODO remove globals
 void processInput(GLFWwindow *window);
 void runLoop(const Window& window, const Program& program1, const Program& program2);
 
@@ -60,11 +59,10 @@ void runLoop(const Window& window, const Program& program1, const Program& progr
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		int vertexColorLocation = glGetUniformLocation(program1.getShader(), "vertexColor");
-
 		glUseProgram(program1.getShader());
 		float greenValue = (std::sin(glfwGetTime()) / 2.0f) + 0.5f;
-		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
+		program1.setVecValue("vertexColor", 0.0f, greenValue, 0.0f, 1.0f);
+		program1.setValue("offset", greenValue / 2.0f);
 		glBindVertexArray(g1.getVAO());
 		glDrawElements(GL_TRIANGLES, g1.getQty(), GL_UNSIGNED_INT, 0);
 

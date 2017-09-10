@@ -55,3 +55,26 @@ bool Program::link(const std::string& vertexFilename, const std::string& fragmen
 	}
 	return true;
 }
+
+template<>
+void Program::setValue<bool>(const std::string& name, bool value) const
+{
+	glUniform1i(glGetUniformLocation(shader, name.c_str()), (int)value); 
+}
+
+template<>
+void Program::setValue<int>(const std::string& name, int value) const
+{
+	glUniform1i(glGetUniformLocation(shader, name.c_str()), value); 
+}
+
+template<>
+void Program::setValue<float>(const std::string& name, float value) const
+{
+	glUniform1f(glGetUniformLocation(shader, name.c_str()), value);
+}
+
+void Program::setVecValue(const std::string& name, float v1, float v2, float v3, float v4) const
+{
+	glUniform4f(glGetUniformLocation(shader, name.c_str()), v1, v2, v3, v4);
+}
