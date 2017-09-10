@@ -48,7 +48,7 @@ bool Shader::compile(const std::string& filename, ShaderType shaderType)
 
 const std::string readFile(const std::string &filename)
 {
-	std::ifstream f(filename);
+	std::ifstream f("resources/" + filename);
 	std::stringstream strStream;
 	strStream << f.rdbuf();
 	return strStream.str();

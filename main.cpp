@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <cmath>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -38,8 +39,8 @@ int main(void)
 	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
 	Program program1, program2;
-	program1.link("vertex.glsl", "fragment.glsl");
-	program2.link("vertex1.glsl", "fragment.glsl");
+	program1.link("vertex01.glsl", "fragment01.glsl");
+	program2.link("vertex02.glsl", "fragment02.glsl");
 
 	runLoop(window, program1, program2);
 
@@ -49,8 +50,8 @@ int main(void)
 void runLoop(const Window& window, const Program& program1, const Program& program2)
 {
 	Geometry g1, g2;
-	g1.load("vertices01.txt", "indices01.txt");
-	g2.load("vertices02.txt", "indices02.txt");
+	g1.load("vertices01.txt", "indices01.txt", false);
+	g2.load("vertices02.txt", "indices02.txt", true);
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
@@ -58,8 +59,12 @@ void runLoop(const Window& window, const Program& program1, const Program& progr
 		
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-        
+
+		int vertexColorLocation = glGetUniformLocation(program1.getShader(), "vertexColor");
+
 		glUseProgram(program1.getShader());
+		float greenValue = (std::sin(glfwGetTime()) / 2.0f) + 0.5f;
+		glUniform4f(vertexColorLocation, 0.0f, greenValue, 0.0f, 1.0f);
 		glBindVertexArray(g1.getVAO());
 		glDrawElements(GL_TRIANGLES, g1.getQty(), GL_UNSIGNED_INT, 0);
 
