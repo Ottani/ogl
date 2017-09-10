@@ -12,7 +12,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
 
-add_executable(ogl main.cpp shader.cpp geometry.cpp)
+add_executable(ogl main.cpp program.cpp shader.cpp geometry.cpp window.cpp)
 
 if (WIN32)
 	message(STATUS "Using WIN32")
