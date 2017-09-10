@@ -13,7 +13,7 @@ using std::cout;
 using std::cerr;
 
 void processInput(GLFWwindow *window);
-void runLoop(const Window& window, const Program& program1, const Program& program2);
+void runLoop(const Window& window, const Program& program1, const Program& program2, const Program& program3);
 
 int main(void)
 {
@@ -37,20 +37,24 @@ int main(void)
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
-	Program program1, program2;
+	// TODO add to geometry? use ref count?
+	Program program1, program2, program3;
 	program1.link("vertex01.glsl", "fragment01.glsl");
 	program2.link("vertex02.glsl", "fragment02.glsl");
+	program3.link("vertex03.glsl", "fragment03.glsl");
 
-	runLoop(window, program1, program2);
+	runLoop(window, program1, program2, program3);
 
 	return 0;
 }
 
-void runLoop(const Window& window, const Program& program1, const Program& program2)
+void runLoop(const Window& window, const Program& program1, const Program& program2, const Program& program3)
 {
-	Geometry g1, g2;
-	g1.load("vertices01.txt", "indices01.txt", false);
-	g2.load("vertices02.txt", "indices02.txt", true);
+	Geometry g1, g2, g3;
+	g1.load("vertices01.txt", "indices01.txt", Geometry::VertStructType::VERTEX_ONLY);
+	g2.load("vertices02.txt", "indices02.txt", Geometry::VertStructType::WITH_COLOR);
+	g3.load("vertices03.txt", "indices03.txt", Geometry::VertStructType::WITH_COLOR_TEXT);
+	g3.addTexture("container.png");
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
@@ -69,6 +73,11 @@ void runLoop(const Window& window, const Program& program1, const Program& progr
 		glUseProgram(program2.getShader());
 		glBindVertexArray(g2.getVAO());
 		glDrawElements(GL_TRIANGLES, g2.getQty(), GL_UNSIGNED_INT, 0);
+
+		glUseProgram(program3.getShader());
+		glBindTexture(GL_TEXTURE_2D, g3.getTexture());
+		glBindVertexArray(g3.getVAO());
+		glDrawElements(GL_TRIANGLES, g3.getQty(), GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window.getWindow());
 		glfwPollEvents();
