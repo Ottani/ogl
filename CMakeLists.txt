@@ -11,6 +11,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 find_package(glfw3 REQUIRED)
 find_package(GLEW REQUIRED)
+find_package(glm REQUIRED)
 
 add_executable(ogl main.cpp program.cpp shader.cpp geometry.cpp window.cpp)
 

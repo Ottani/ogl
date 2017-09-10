@@ -4,6 +4,10 @@
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <glm/mat4x4.hpp>
+#include <glm/trigonometric.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include "program.hpp"
 #include "geometry.hpp"
@@ -74,9 +78,17 @@ void runLoop(const Window& window, const Program& program1, const Program& progr
 		glBindVertexArray(g2.getVAO());
 		glDrawElements(GL_TRIANGLES, g2.getQty(), GL_UNSIGNED_INT, 0);
 
+		//glm::mat4 trans;
+		//trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+		//trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+		glm::mat4 trans;
+		trans = glm::rotate(trans, (float)glfwGetTime()*4.0f, glm::vec3(0.0f, 0.0f, 1.0f));
+		trans = glm::translate(trans, glm::vec3(0.0f, 0.5f, 0.0f));
+		
 		glUseProgram(program3.getShader());
 		glBindTexture(GL_TEXTURE_2D, g3.getTexture());
 		glBindVertexArray(g3.getVAO());
+		program3.setMatrixValue("transform", glm::value_ptr(trans));
 		glDrawElements(GL_TRIANGLES, g3.getQty(), GL_UNSIGNED_INT, 0);
 
 		glfwSwapBuffers(window.getWindow());
