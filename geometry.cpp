@@ -18,7 +18,7 @@ std::vector<T> loadFromFile(const std::string &filename);
 
 Geometry::Geometry()
 {
-
+	stbi_set_flip_vertically_on_load(true);
 }
 
 Geometry::~Geometry()
@@ -79,6 +79,7 @@ void Geometry::load(const std::string& verticesFilename, const std::string& indi
 bool Geometry::addTexture(const std::string& filename)
 {
 	cout << "Loading texture " << filename << '\n';
+	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	// set the texture wrapping/filtering options (on the currently bound texture object)
@@ -92,7 +93,7 @@ bool Geometry::addTexture(const std::string& filename)
 	unsigned char *data = stbi_load(texFilename.c_str(), &width, &height, &nrChannels, 0);
 	bool ret = true;
 	if (data) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 		glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	else {
@@ -100,6 +101,8 @@ bool Geometry::addTexture(const std::string& filename)
 		ret = false;
 	}
 	stbi_image_free(data);
+	textures.push_back(texture);
+	cout << "Texture added: " << texture << '\n';
 	return ret;
 }
 

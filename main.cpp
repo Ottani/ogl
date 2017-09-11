@@ -17,7 +17,7 @@ using std::cout;
 using std::cerr;
 
 void processInput(GLFWwindow *window);
-void runLoop(const Window& window, const Program& program1, const Program& program2, const Program& program3);
+void runLoop(const Window& window, const Program& program1);
 
 int main(void)
 {
@@ -41,55 +41,77 @@ int main(void)
 	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
 	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
 
-	// TODO add to geometry? use ref count?
-	Program program1, program2, program3;
-	program1.link("vertex01.glsl", "fragment01.glsl");
-	program2.link("vertex02.glsl", "fragment02.glsl");
-	program3.link("vertex03.glsl", "fragment03.glsl");
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
-	runLoop(window, program1, program2, program3);
+
+	// TODO add to geometry? use ref count?
+	Program program; // program1, program2, program3;
+	program.link("vertex04.glsl", "fragment04.glsl");
+
+	runLoop(window, program);
 
 	return 0;
 }
 
-void runLoop(const Window& window, const Program& program1, const Program& program2, const Program& program3)
+void runLoop(const Window& window, const Program& program)
 {
-	Geometry g1, g2, g3;
-	g1.load("vertices01.txt", "indices01.txt", Geometry::VertStructType::VERTEX_ONLY);
-	g2.load("vertices02.txt", "indices02.txt", Geometry::VertStructType::WITH_COLOR);
-	g3.load("vertices03.txt", "indices03.txt", Geometry::VertStructType::WITH_COLOR_TEXT);
-	g3.addTexture("container.png");
+	Geometry g;
+	g.load("vertices04.txt", "indices04.txt", Geometry::VertStructType::WITH_COLOR_TEXT);
+	g.addTexture("container.png");
+	g.addTexture("awesomeface.png");
+
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 
 	while (!glfwWindowShouldClose(window.getWindow()))
 	{
 		processInput(window.getWindow());
 		
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-		glUseProgram(program1.getShader());
-		float greenValue = (std::sin(glfwGetTime()) / 2.0f) + 0.5f;
-		program1.setVecValue("vertexColor", 0.0f, greenValue, 0.0f, 1.0f);
-		program1.setValue("offset", greenValue / 2.0f);
-		glBindVertexArray(g1.getVAO());
-		glDrawElements(GL_TRIANGLES, g1.getQty(), GL_UNSIGNED_INT, 0);
+		//glm::mat4 model;
+		//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
-		glUseProgram(program2.getShader());
-		glBindVertexArray(g2.getVAO());
-		glDrawElements(GL_TRIANGLES, g2.getQty(), GL_UNSIGNED_INT, 0);
+		glm::mat4 view;
+		view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
-		//glm::mat4 trans;
-		//trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
-		//trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
-		glm::mat4 trans;
-		trans = glm::rotate(trans, (float)glfwGetTime()*4.0f, glm::vec3(0.0f, 0.0f, 1.0f));
-		trans = glm::translate(trans, glm::vec3(0.0f, 0.5f, 0.0f));
+		glm::mat4 projection;
+		projection = glm::perspective(glm::radians(45.0f), (float)window.getWidth() / window.getHeight(), 0.1f, 100.0f);
+
+		glUseProgram(program.getShader());
+		program.setValue("texture1", 0);
+		program.setValue("texture2", 1);
+
+		glActiveTexture(GL_TEXTURE0);
+		glBindTexture(GL_TEXTURE_2D, g.getTexture(0));
+		glActiveTexture(GL_TEXTURE1);
+		glBindTexture(GL_TEXTURE_2D, g.getTexture(1));
+		glBindVertexArray(g.getVAO());
 		
-		glUseProgram(program3.getShader());
-		glBindTexture(GL_TEXTURE_2D, g3.getTexture());
-		glBindVertexArray(g3.getVAO());
-		program3.setMatrixValue("transform", glm::value_ptr(trans));
-		glDrawElements(GL_TRIANGLES, g3.getQty(), GL_UNSIGNED_INT, 0);
+		program.setMatrixValue("view", glm::value_ptr(view));
+		program.setMatrixValue("projection", glm::value_ptr(projection));
+
+		for (unsigned int i = 0; i < 10; i++) {
+			glm::mat4 model;
+			model = glm::translate(model, cubePositions[i]);
+			//float angle = 20.0f * i;
+			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f * (i + 1.0f)), glm::vec3(0.5f, 1.0f, 0.0f));
+			//model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			program.setMatrixValue("model", glm::value_ptr(model));
+			glDrawElements(GL_TRIANGLES, g.getQty(), GL_UNSIGNED_INT, 0);
+		}
 
 		glfwSwapBuffers(window.getWindow());
 		glfwPollEvents();

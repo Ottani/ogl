@@ -19,6 +19,9 @@ public:
 		w->resize(width, height);
 	}
 
+	int getWidth() const { return width; }
+	int getHeight() const { return height; }
+
 private:
 	void resize(int newWidth, int newHeight);
 	GLFWwindow* window;
