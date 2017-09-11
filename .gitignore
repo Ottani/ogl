@@ -5,4 +5,10 @@
 /Makefile
 /ogl
 /.vscode/
-
+/.vs/
+/*vcxproj
+/*vcxproj.filters
+/*.sln
+/Debug/
+/Win32/
+/ogl.dir/
