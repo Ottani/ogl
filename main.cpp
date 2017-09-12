@@ -1,13 +1,14 @@
 #include <iostream>
 #include <string>
 #include <cmath>
+#include <cstdint>
 
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <glm/mat4x4.hpp>
 #include <glm/trigonometric.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <SDL2/SDL.h>
 
 #include "program.hpp"
 #include "geometry.hpp"
@@ -16,64 +17,81 @@
 using std::cout;
 using std::cerr;
 
-glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
+class MainApp
+{
+public:
+	MainApp();
+	~MainApp();
+	MainApp(const MainApp& g) = delete;
+	MainApp(const MainApp&& g) = delete;
+	MainApp& operator= (const MainApp& g) = delete;
+	MainApp& operator= (const MainApp&& g) = delete;
 
-float deltaTime = 0.0f;
-float lastFrame = 0.0f;
-float lastX = 400, lastY = 300;
-bool firstMouse = true;
+	bool init();
+	void run();
 
-float yaw = -90.0f;
-float pitch = 0.0f;
-float fov = 45.0f;
+private:
+	void doLoop();
+	void processInput();
+	Window window;
+	Program program;
+	uint32_t lastFrame;
+	uint32_t delta;
+	bool running;
+	glm::vec3 cameraPos;
+	glm::vec3 cameraFront;
+	glm::vec3 cameraUp;
+	
+	float yaw;
+	float pitch;
+	float fov;
+};
 
-void processInput(GLFWwindow *window);
-void runLoop(const Window& window, const Program& program1);
-void mouse_callback(GLFWwindow* window, double xpos, double ypos);
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
+MainApp::MainApp() : window(640, 480, "OPENGL"), cameraPos(0.0f, 0.0f,  3.0f), cameraFront(0.0f, 0.0f, -1.0f), cameraUp(0.0f, 1.0f,  0.0f), yaw(-90.0f), pitch(0.0f), fov(45.0f)
+{
 
-int main(void)
+}
+
+MainApp::~MainApp()
+{
+	SDL_Quit();
+}
+
+bool MainApp::init()
 {
 	cout << "starting..." << std::endl;
+	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+		cerr << "SDL_Init failed: " << SDL_GetError() << '\n';
+		return false;
+	}
+	SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 
-	Window window(640, 480, "OPENGL");
-	if (!window.getWindow())
-	{
-		cerr << "Error creating window!\n";
-		return -1;
+	if (!window.init()) {
+		return false;
 	}
 
 	GLenum err = glewInit();
-	if (err = GLEW_OK)
-	{
+	if (err != GLEW_OK) {
 		cerr << "Error: " << glewGetErrorString(err) << '\n';
-		return -2;
+		return false;
 	}
 
-	int nrAttributes;
-	glGetIntegerv(GL_MAX_VERTEX_ATTRIBS, &nrAttributes);
-	cout << "Maximum nr of vertex attributes supported: " << nrAttributes << std::endl;
-
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_CULL_FACE);
-
-
-	// TODO add to geometry? use ref count?
-	Program program; // program1, program2, program3;
-	program.link("vertex04.glsl", "fragment04.glsl");
-
-	glfwSetInputMode(window.getWindow(), GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-	glfwSetCursorPosCallback(window.getWindow(), mouse_callback);
-	glfwSetScrollCallback(window.getWindow(), scroll_callback);
-
-	runLoop(window, program);
-
-	return 0;
+	return true;
 }
 
-void runLoop(const Window& window, const Program& program)
+void MainApp::run()
+{
+	// TODO add to geometry? use ref count?
+	program.link("vertex04.glsl", "fragment04.glsl");
+	lastFrame = SDL_GetTicks();
+	doLoop();
+}
+
+void MainApp::doLoop()
 {
 	Geometry g;
 	g.load("vertices04.txt", "indices04.txt", Geometry::VertStructType::WITH_COLOR_TEXT);
@@ -92,13 +110,12 @@ void runLoop(const Window& window, const Program& program)
 		glm::vec3(1.5f,  0.2f, -1.5f),
 		glm::vec3(-1.3f,  1.0f, -1.5f)
 	};
-
-	while (!glfwWindowShouldClose(window.getWindow()))
-	{
-		float currentFrame = glfwGetTime();
-		deltaTime = currentFrame - lastFrame;
-		lastFrame = currentFrame;  
-		processInput(window.getWindow());
+	running = true;
+	while (running) {
+		uint32_t currFrame = SDL_GetTicks();
+		delta = currFrame - lastFrame;
+		lastFrame = currFrame;  
+		processInput();
 		
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -108,11 +125,6 @@ void runLoop(const Window& window, const Program& program)
 
 		glm::mat4 view;
 		//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-		//float radius = 10.0f;
-		//float camX = sin(glfwGetTime()) * radius;
-		//float camZ = cos(glfwGetTime()) * radius;
-		//view = glm::lookAt(glm::vec3(camX, 0.0, camZ), glm::vec3(0.0, 0.0, 0.0), glm::vec3(0.0, 1.0, 0.0));
-
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		glm::mat4 projection;
@@ -136,57 +148,53 @@ void runLoop(const Window& window, const Program& program)
 			glm::mat4 model;
 			model = glm::translate(model, cubePositions[i]);
 			float angle = 20.0f * i;
-			model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f * (i + 1.0f)), glm::vec3(0.5f, 1.0f, 0.0f));
-			//model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+			//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f * (i + 1.0f)), glm::vec3(0.5f, 1.0f, 0.0f));
+			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
 			program.setMatrixValue("model", glm::value_ptr(model));
 			glDrawElements(GL_TRIANGLES, g.getQty(), GL_UNSIGNED_INT, 0);
 		}
 
-		glfwSwapBuffers(window.getWindow());
-		glfwPollEvents();
+		window.swap();
 	}
+
 }
 
-void processInput(GLFWwindow *window)
+void MainApp::processInput()
 {
-	float cameraSpeed = 2.5f * deltaTime;
-    if(glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-		glfwSetWindowShouldClose(window, true);
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+	SDL_Event event;
+	while ((SDL_PollEvent(&event)) != 0) {
+		if (event.type == SDL_QUIT) { 
+			running = false;
+			return;
+		}
+	}
+	float cameraSpeed = 2.5f * (delta / 1000.0f);
+	const uint8_t *state = SDL_GetKeyboardState(nullptr);
+	if (state[SDL_SCANCODE_ESCAPE]) {
+		running = false;
+	}
+	if (state[SDL_SCANCODE_W]) {
 		cameraPos += cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		cameraPos -= cameraSpeed * cameraFront;
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
-}
-
-void mouse_callback(GLFWwindow* window, double xpos, double ypos)
-{
-	if(firstMouse)
-	{
-		lastX = xpos;
-		lastY = ypos;
-		firstMouse = false;
 	}
+	if (state[SDL_SCANCODE_S]) {
+		cameraPos -= cameraSpeed * cameraFront;
+	}
+	if (state[SDL_SCANCODE_A]) {
+		cameraPos -= glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	}
+	if (state[SDL_SCANCODE_D]) {
+		cameraPos += glm::normalize(glm::cross(cameraFront, cameraUp)) * cameraSpeed;
+	}
+	
+	int xOffset, yOffset;
+	const uint32_t mouseState = SDL_GetRelativeMouseState(&xOffset, &yOffset);
 
-	float xoffset = xpos - lastX;
-	float yoffset = lastY - ypos; 
-	lastX = xpos;
-	lastY = ypos;
+	float sensitivity = 0.15f;
+	yaw   += (xOffset * sensitivity);
+	pitch += (yOffset * sensitivity);
 
-	float sensitivity = 0.05;
-	xoffset *= sensitivity;
-	yoffset *= sensitivity;
-
-	yaw   += xoffset;
-	pitch += yoffset;
-
-	if(pitch > 89.0f)
-		pitch = 89.0f;
-	if(pitch < -89.0f)
-		pitch = -89.0f;
+	if(pitch > 89.0f) pitch = 89.0f;
+	if(pitch < -89.0f) pitch = -89.0f;
 
 	glm::vec3 front;
 	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
@@ -194,15 +202,22 @@ void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
 	cameraFront = glm::normalize(front);
 
-	//cout << "yaw: " << yaw << ", pitch" << pitch << '\n';
-}
-
-void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
-{
-	if(fov >= 1.0f && fov <= 45.0f)
+	//TODO missing
+	/*if(fov >= 1.0f && fov <= 45.0f)
 		fov -= yoffset;
 	if(fov <= 1.0f)
 		fov = 1.0f;
 	if(fov >= 45.0f)
-		fov = 45.0f;
+		fov = 45.0f;*/
+}
+
+int main(void)
+{
+	MainApp app;
+	if (!app.init()) {
+		return -1;
+	}
+	app.run();
+
+	return 0;
 }
