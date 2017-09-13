@@ -10,9 +10,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <SDL2/SDL.h>
 
-#include "program.hpp"
-#include "geometry.hpp"
 #include "window.hpp"
+#include "cube.hpp"
+#include "renderer.hpp"
 
 using std::cout;
 using std::cerr;
@@ -31,10 +31,11 @@ public:
 	void run();
 
 private:
-	void doLoop();
 	void processInput();
 	Window window;
-	Program program;
+	Renderer renderer;
+
+
 	uint32_t lastFrame;
 	uint32_t delta;
 	bool running;
@@ -47,7 +48,7 @@ private:
 	float fov;
 };
 
-MainApp::MainApp() : window(640, 480, "OPENGL"), cameraPos(0.0f, 0.0f,  3.0f), cameraFront(0.0f, 0.0f, -1.0f), cameraUp(0.0f, 1.0f,  0.0f), yaw(-90.0f), pitch(0.0f), fov(45.0f)
+MainApp::MainApp() : window(1024, 768, "OPENGL"), cameraPos(0.0f, 0.0f,  3.0f), cameraFront(0.0f, 0.0f, -1.0f), cameraUp(0.0f, 1.0f,  0.0f), yaw(-90.0f), pitch(0.0f), fov(45.0f)
 {
 
 }
@@ -85,30 +86,34 @@ bool MainApp::init()
 
 void MainApp::run()
 {
-	// TODO add to geometry? use ref count?
-	program.link("vertex04.glsl", "fragment04.glsl");
+	cout << "initProgram\n";
+	if (!renderer.initProgram("vertex04.glsl", "fragment04.glsl")) {
+		cout << "exiting\n";
+		return;
+	}
+	
+	cout << "loadTextures\n";
+	std::vector<std::string> filenames { "container.png", "awesomeface.png" };
+	if (!renderer.loadTextures(filenames)) {
+		cout << "exiting\n";
+		return;
+	}
+
+	renderer.loadModel("cube_vert.txt", "cube_idx.txt");
+
 	lastFrame = SDL_GetTicks();
-	doLoop();
-}
 
-void MainApp::doLoop()
-{
-	Geometry g;
-	g.load("vertices04.txt", "indices04.txt", Geometry::VertStructType::WITH_COLOR_TEXT);
-	g.addTexture("container.png");
-	g.addTexture("awesomeface.png");
-
-	glm::vec3 cubePositions[] = {
-		glm::vec3(0.0f,  0.0f,  0.0f),
-		glm::vec3(2.0f,  5.0f, -15.0f),
-		glm::vec3(-1.5f, -2.2f, -2.5f),
-		glm::vec3(-3.8f, -2.0f, -12.3f),
-		glm::vec3(2.4f, -0.4f, -3.5f),
-		glm::vec3(-1.7f,  3.0f, -7.5f),
-		glm::vec3(1.3f, -2.0f, -2.5f),
-		glm::vec3(1.5f,  2.0f, -2.5f),
-		glm::vec3(1.5f,  0.2f, -1.5f),
-		glm::vec3(-1.3f,  1.0f, -1.5f)
+	std::vector<Cube> cubes = {
+		Cube(glm::vec3(0.0f,  0.0f,  0.0f),    5.0f,  1.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(2.0f,  5.0f, -15.0f),   5.0f,  2.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(-1.5f, -2.2f, -2.5f),   5.0f,  3.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(-3.8f, -2.0f, -12.3f),  5.0f,  4.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(2.4f, -0.4f, -3.5f),    5.0f,  5.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(-1.7f,  3.0f, -7.5f),   5.0f,  6.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(1.3f, -2.0f, -2.5f),    5.0f,  7.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(1.5f,  2.0f, -2.5f),    5.0f,  8.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(1.5f,  0.2f, -1.5f),    5.0f,  9.0f, glm::vec3(0.5f, 1.0f, 0.0f)),
+		Cube(glm::vec3(-1.3f,  1.0f, -1.5f),   5.0f, 10.0f, glm::vec3(0.5f, 1.0f, 0.0f))
 	};
 	running = true;
 	while (running) {
@@ -116,44 +121,13 @@ void MainApp::doLoop()
 		delta = currFrame - lastFrame;
 		lastFrame = currFrame;  
 		processInput();
-		
-		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-		//glm::mat4 model;
-		//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
 
 		glm::mat4 view;
-		//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 		view = glm::lookAt(cameraPos, cameraPos + cameraFront, cameraUp);
 
 		glm::mat4 projection;
-		//projection = glm::perspective(glm::radians(45.0f), (float)window.getWidth() / window.getHeight(), 0.1f, 100.0f);
 		projection = glm::perspective(glm::radians(fov), (float)window.getWidth() / window.getHeight(), 0.1f, 100.0f);
-
-		glUseProgram(program.getShader());
-		program.setValue("texture1", 0);
-		program.setValue("texture2", 1);
-
-		glActiveTexture(GL_TEXTURE0);
-		glBindTexture(GL_TEXTURE_2D, g.getTexture(0));
-		glActiveTexture(GL_TEXTURE1);
-		glBindTexture(GL_TEXTURE_2D, g.getTexture(1));
-		glBindVertexArray(g.getVAO());
-		
-		program.setMatrixValue("view", glm::value_ptr(view));
-		program.setMatrixValue("projection", glm::value_ptr(projection));
-
-		for (unsigned int i = 0; i < 10; i++) {
-			glm::mat4 model;
-			model = glm::translate(model, cubePositions[i]);
-			float angle = 20.0f * i;
-			//model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f * (i + 1.0f)), glm::vec3(0.5f, 1.0f, 0.0f));
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			program.setMatrixValue("model", glm::value_ptr(model));
-			glDrawElements(GL_TRIANGLES, g.getQty(), GL_UNSIGNED_INT, 0);
-		}
-
+		renderer.render(view, projection, cubes);
 		window.swap();
 	}
 
@@ -191,7 +165,7 @@ void MainApp::processInput()
 
 	float sensitivity = 0.15f;
 	yaw   += (xOffset * sensitivity);
-	pitch += (yOffset * sensitivity);
+	pitch -= (yOffset * sensitivity);
 
 	if(pitch > 89.0f) pitch = 89.0f;
 	if(pitch < -89.0f) pitch = -89.0f;
@@ -221,3 +195,4 @@ int main(void)
 
 	return 0;
 }
+

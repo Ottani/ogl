@@ -19,6 +19,7 @@ bool Window::init()
 		cerr << "Could not create window: " << SDL_GetError() << '\n';
         return false;
 	}
+	SDL_SetRelativeMouseMode(SDL_TRUE);
 
 	glContext = SDL_GL_CreateContext(window);
 	glViewport(0, 0, width, height);
@@ -29,6 +30,7 @@ bool Window::init()
 
 Window::~Window()
 {
+	SDL_SetRelativeMouseMode(SDL_FALSE);
 	SDL_GL_DeleteContext(glContext);
 	SDL_DestroyWindow(window);
 }

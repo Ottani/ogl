@@ -10,7 +10,7 @@ find_package(glm REQUIRED)
 find_package(SDL2 REQUIRED)
 
 #message(STATUS "lib: ${SDL2_LIBRARIES}")
-add_executable(ogl main.cpp program.cpp shader.cpp geometry.cpp window.cpp)
+add_executable(ogl main.cpp program.cpp shader.cpp renderer.cpp window.cpp cube.cpp)
 
 if (WIN32)
 	message(STATUS "Using WIN32")

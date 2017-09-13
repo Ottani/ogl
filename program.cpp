@@ -43,6 +43,7 @@ bool Program::link(const std::string& vertexFilename, const std::string& fragmen
 
 	glAttachShader(shader, vShader.getShader());
 	glAttachShader(shader, fShader.getShader());
+	cout << "linking...\n";
 	glLinkProgram(shader);
 
 	int success;
