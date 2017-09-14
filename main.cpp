@@ -185,7 +185,8 @@ void MainApp::processInput()
 		fov = 45.0f;*/
 }
 
-int main(void)
+
+int main(int argv, char** args)
 {
 	MainApp app;
 	if (!app.init()) {
