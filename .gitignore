@@ -1,15 +1,3 @@
-*.exe
-/CMakeCache.txt
-/CMakeFiles
-/cmake_install.cmake
-/Makefile
-/ogl
+/_main.cpp
 /.vscode/
-/.vs/
-/*vcxproj
-/*vcxproj.filters
-/*.sln
-/Debug/
-/Win32/
-/ogl.dir/
-/build/
+/build/*
